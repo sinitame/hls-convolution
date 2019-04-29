@@ -21,6 +21,7 @@ short sumWindow(hls::Window<KERNEL_DIM,KERNEL_DIM,short> *window);
 void multWindow(hls::Window<KERNEL_DIM,KERNEL_DIM,short> *win, char kernel[KERNEL_DIM][KERNEL_DIM][DIM_IN], int dim);
 void win_layer(hls::stream<uint_8> &inStream, hls::Window<KERNEL_DIM,KERNEL_DIM,short> ** windows);
 
-void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream,char kernel[KERNEL_DIM][KERNEL_DIM][DIM_IN]);
+void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream);
+//char kernel[KERNEL_DIM][KERNEL_DIM][DIM_IN]
 
 #endif

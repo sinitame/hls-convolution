@@ -79,7 +79,7 @@ int main()
 
 	// Do the convolution on the core (Third parameter choose operation 0(conv),1(erode),2(dilate)
 	printf("Calling Core function\n");
-	conv_layer(inputStream, outputStream, kernel);
+	conv_layer(inputStream, outputStream);
 	printf("Core function ended\n");
 
 	// Take data from the output stream to our array outImage (Pointed in opencv)

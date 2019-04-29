@@ -1,28 +1,41 @@
 #include "conv_layer.h"
 
-void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, char weights[KERNEL_DIM][KERNEL_DIM][DIM_IN])
+void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream)
 {
 #pragma HLS INTERFACE axis port=inStream
 #pragma HLS INTERFACE axis port=outStream
 #pragma HLS INTERFACE s_axilite port=return bundle=CRTL_BUS
 
+	char weights[KERNEL_DIM][KERNEL_DIM][DIM_IN] = {
+			{{-1, -1, -1},
+			{-1, -1, -1},
+			{-1, -1, -1}},
 
-	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuff1;
-	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuff2;
-	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuff3;
+			{{-1, -1, -1},
+			{8, 8, 8},
+			{-1, -1, -1}},
 
-	hls::Window<KERNEL_DIM,KERNEL_DIM,short> window1;
-	hls::Window<KERNEL_DIM,KERNEL_DIM,short> window2;
-	hls::Window<KERNEL_DIM,KERNEL_DIM,short> window3;
+			{{-1, -1, -1},
+			{-1, -1, -1},
+			{-1, -1, -1}}
+	};
 
-	hls::Window<KERNEL_DIM,KERNEL_DIM,short> windows[DIM_IN] = {window1, window2, window3};
-	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuffArray[DIM_IN] = {lineBuff1, lineBuff2, lineBuff3};
+	hls::Window<KERNEL_DIM,KERNEL_DIM,short> windows[DIM_IN];
+	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuffArray[DIM_IN];
+
+	for (int feature_in = 0; feature_in < DIM_IN; feature_in++)
+	{
+		hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuff;
+		hls::Window<KERNEL_DIM,KERNEL_DIM,short> window;
+
+		windows[feature_in] = window;
+		lineBuffArray[feature_in] = lineBuff;
+	}
+
 
 
 	bool pixValid = false;
-	int res1 = 0;
-	int res2 = 0;
-	int res3 = 0;
+	short res = 0;
 	short result = 0;
 
 	int idCol =0;
@@ -62,16 +75,13 @@ void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, c
 			if (dim == DIM_IN-1){
 				idPixOut++;
 
-				multWindow(&windows[0], weights, 0);
-				res1 = sumWindow(&windows[0]);
-
-				multWindow(&windows[1], weights, 1);
-				res2 = sumWindow(&windows[1]);
-
-				multWindow(&windows[2], weights, 2);
-				res3 = sumWindow(&windows[2]);
-
-				result = (short)(res1 + res2 + res3);
+				for (int feature_in = 0; feature_in < DIM_IN; feature_in++)
+				{
+#pragma HLS UNROLL factor=3
+					multWindow(&windows[feature_in], weights, feature_in);
+					res = sumWindow(&windows[feature_in]);
+					result += res;
+				}
 			}
 		} else {
 			result = 0;
