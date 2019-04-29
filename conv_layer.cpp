@@ -4,7 +4,6 @@ void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, c
 {
 #pragma HLS INTERFACE axis port=inStream
 #pragma HLS INTERFACE axis port=outStream
-#pragma HLS INTERFACE bram port=weights
 #pragma HLS INTERFACE s_axilite port=return bundle=CRTL_BUS
 
 
@@ -16,8 +15,8 @@ void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, c
 	hls::Window<KERNEL_DIM,KERNEL_DIM,short> window2;
 	hls::Window<KERNEL_DIM,KERNEL_DIM,short> window3;
 
-	hls::Window<KERNEL_DIM,KERNEL_DIM,short> *windows[DIM_IN] = {&window1, &window2, &window3};
-	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> *lineBuffArray[DIM_IN] = {&lineBuff1, &lineBuff2, &lineBuff3};
+	hls::Window<KERNEL_DIM,KERNEL_DIM,short> windows[DIM_IN] = {window1, window2, window3};
+	hls::LineBuffer<KERNEL_DIM,IMG_WIDTH,unsigned char> lineBuffArray[DIM_IN] = {lineBuff1, lineBuff2, lineBuff3};
 
 
 	bool pixValid = false;
@@ -37,22 +36,23 @@ void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, c
 
 	uint_8 pixelChannel;
 
-	while (!inStream.empty())
+	//while (!inStream.empty())
+	for (int i=0; i< IMG_WIDTH*IMG_HEIGHT*DIM_IN; i++)
 	{
 #pragma HLS PIPELINE
 		pixelChannel = inStream.read();
 		unsigned char pixelIn = pixelChannel;
 
-		lineBuffArray[dim]->shift_up(idCol);
-		lineBuffArray[dim]->insert_top(pixelIn,idCol);
+		lineBuffArray[dim].shift_up(idCol);
+		lineBuffArray[dim].insert_top(pixelIn,idCol);
 
 		for (int idWinX = 0; idWinX < KERNEL_DIM; idWinX++)
 		{
 			for (int idWinY = 0; idWinY < KERNEL_DIM; idWinY++)
 			{
 				winPos = idPixOut%(IMG_WIDTH-2);
-				short val = (short)lineBuffArray[dim]->getval(idWinX, idWinY + winPos);
-				windows[dim]->insert(val,idWinX,idWinY);
+				short val = (short)lineBuffArray[dim].getval(idWinX, idWinY + winPos);
+				windows[dim].insert(val,idWinX,idWinY);
 			}
 		}
 
@@ -62,14 +62,14 @@ void conv_layer(hls::stream<uint_8> &inStream, hls::stream<uint_8> &outStream, c
 			if (dim == DIM_IN-1){
 				idPixOut++;
 
-				multWindow(&window1, weights, 0);
-				res1 = sumWindow(&window1);
+				multWindow(&windows[0], weights, 0);
+				res1 = sumWindow(&windows[0]);
 
-				multWindow(&window2, weights, 1);
-				res2 = sumWindow(&window2);
+				multWindow(&windows[1], weights, 1);
+				res2 = sumWindow(&windows[1]);
 
-				multWindow(&window3, weights, 2);
-				res3 = sumWindow(&window3);
+				multWindow(&windows[2], weights, 2);
+				res3 = sumWindow(&windows[2]);
 
 				result = (short)(res1 + res2 + res3);
 			}

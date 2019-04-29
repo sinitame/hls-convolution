@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <hls_opencv.h>
 
 #define IMG_WIDTH 220
 #define IMG_HEIGHT 220
